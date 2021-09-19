@@ -1,22 +1,20 @@
 from collections import Counter
 
 test = {}
-test[100] = ['a','c','d','f','g','i','m','p']
-test[200] = ['a','b','c','f','i','m','o']
-test[300] = ['b','f','h','j','o']
-test[400] = ['b','c','k','s','p']
-test[500] = ['l']
-test[600] = ['a']
-test[700] = []
-test[800] = ['a','c','e','f','l','m','n','p']
+test[1] = ['A','B']
+test[2] = ['B','C','D']
+test[3] = ['A','C','D','E']
+test[4] = ['A','D','E']
+test[5] = ['A','B','C']
 test
 
 
 class Node:
-    def __init__(self,name,frequency,parent):
+    def __init__(self,name,frequency,parent,parent_obj = None):
         self.name = name
         self.count = frequency
-        self.parent = parent
+        self.parent_name = parent
+        self.parent = parent_obj
         self.children = []
         self.children_label = []
         self.leaf = False
@@ -36,7 +34,7 @@ def remove_items_below_sup(transaction_dict,count,support):
     final_counts_idx_order = dict(zip(final_counts.keys(),range(len(final_counts.keys()))))
     for transaction in transaction_dict:
         transaction_dict[transaction] = sorted([i for i in transaction_dict[transaction] if (i in final_counts.keys())],key = lambda x: final_counts_idx_order[x])
-    return transaction_dict,final_counts
+    return transaction_dict,final_counts, final_counts_idx_order
 
 #traverse one transaction
 def traverse_one_transaction(transaction,root_node,currentidx,start = False):
@@ -52,7 +50,7 @@ def traverse_one_transaction(transaction,root_node,currentidx,start = False):
         # a child of the root_node, meaning that it is a new path 
         # Hence we create a new node and add it to the root_node
         if transaction[currentidx] not in root_node.children_label:
-            child_node = Node(transaction[currentidx],0,root_node.name)
+            child_node = Node(transaction[currentidx],0,root_node.name,root_node)
             root_node.children_label.append(transaction[currentidx])
             root_node.children.append(child_node)
             idx = root_node.children_label.index(transaction[currentidx])
@@ -76,8 +74,32 @@ def create_fp_tree(transaction_dict):
         traverse_one_transaction(transaction = transaction_dict[trans],root_node = root_node, currentidx = 0,start = True)
     return root_node
 
+def traverse_fp_tree(item,tree,cond_tree):
+    #if (tree.leaf is False) and (tree.name != item):
+    for child in tree.children:
+        #temp_list.append(child)
+        if child.name == item:
+            cond_tree.children_label.append(child.name)
+            cond_tree.children.append(child)
+            create_conditional_tree(cond_tree.child,child,Start = True)
+        else:
+            traverse_fp_tree(item,tree = child,cond_tree = cond_tree)
+
+def create_conditional_tree(cond_tree,child,Start = False):
+    if child.parent_name != 'Null':
+        cond_tree.parent = child.parent
+        if Start is True:
+            cond_tree.parent.count = 1
+        else:
+            cond_tree.parent.count += 1
+        create_conditional_tree(cond_tree.child,child.parent)
+        
+
 test_dict,count = get_item_frequency(test)
 
-test_dict,final_count = remove_items_below_sup(test_dict,count,3)
+test_dict,final_count,final_counts_idx_order = remove_items_below_sup(test_dict,count,3)
 
 fp_tree = create_fp_tree(test_dict)
+
+conditional_tree = Node('Null',1,None)
+traverse_fp_tree('E',fp_tree,conditional_tree)
